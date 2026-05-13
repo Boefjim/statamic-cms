@@ -99,7 +99,7 @@ class GlobalSet implements Contract
 
         Facades\GlobalSet::save($this);
 
-        $this->saveOrDeleteLocalizations();
+        $this->saveOrDeleteLocalizations($withEvents);
 
         foreach ($afterSaveCallbacks as $callback) {
             $callback($this);
@@ -116,15 +116,25 @@ class GlobalSet implements Contract
         return $this;
     }
 
-    protected function saveOrDeleteLocalizations()
+    protected function saveOrDeleteLocalizations($withEvents = false)
     {
         $localizations = $this->localizations();
 
-        $localizations->each->save();
+        if ($withEvents) {
+            $localizations->each->save();
+        } else {
+            $localizations->each->saveQuietly();
+        }
 
-        $this->freshLocalizations()
-            ->diffKeys($localizations)
-            ->each->delete();
+        if ($withEvents) {
+            $this->freshLocalizations()
+                ->diffKeys($localizations)
+                ->each->delete();
+        } else {
+            $this->freshLocalizations()
+                ->diffKeys($localizations)
+                ->each->deleteQuietly();
+        }
     }
 
     public function deleteQuietly()
